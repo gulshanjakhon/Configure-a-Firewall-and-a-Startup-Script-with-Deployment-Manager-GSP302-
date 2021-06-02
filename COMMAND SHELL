@@ -1,0 +1,94 @@
+LAB NAME : Configure a Firewall and a Startup Script with Deployment Manager(GSP302) 100% COMPLETE 💥💥
+	FOLLOW STEPS : 
+To score 100% you must successfully complete all tasks within the time period!🎯
+============================================================
+TASK 1 : A new Deployment Manager deployment has been created
+=========================================================
+TASK 2 : The deployment includes a virtual machine that has an embedded startup-script
+========================================================
+TASK 3 : The virtual machine that has a startup-script also has a tag item called http
+=========================================================
+TASK 4 : A firewall rule exists that allows port 80 (http) traffic and is applied using a tag with a value of http
+=========================================================
+TASK 5 : The virtual machine responds to web requests using the Apache web server
+=========================================================
+TASK 6 : Check that Deployment manager includes startup script and firewall resources
+=========================================================
+
+FOLLOW COMMANDS AND PASTE IN CLOUD SHELL :
+===========================================
+
+mkdir deployment_manager
+cd deployment_manager
+gsutil cp gs://spls/gsp302/* .
+nano qwiklabs.jinja
+
+===========================================
+#CUT ALL CONTANT IN qwiklabs.jinja FILE AND PASTE BELOW CODE:
+===========================================
+resources:
+- type: compute.v1.instance
+  name: vm-test
+  properties:
+    zone: {{ properties["zone"] }}
+    machineType: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/zones/{{ properties["zone"] }}/machineTypes/f1-micro
+    # For examples on how to use startup scripts on an instance, see:
+    #   https://cloud.google.com/compute/docs/startupscript
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        diskName: disk-{{ env["deployment"] }}
+        sourceImage: https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/family/debian-9
+    networkInterfaces:
+    - network: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/global/networks/default
+      # Access Config required to give the instance a public IP address
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    tags:
+      items:
+        - http
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y apache2
+- type: compute.v1.firewall
+  name: default-allow-http
+  properties:
+    network: https://www.googleapis.com/compute/v1/projects/{{ env["project"] }}/global/networks/default
+    targetTags:
+    - http
+    allowed:
+    - IPProtocol: tcp
+      ports:
+      - '80'
+    sourceRanges:
+    - 0.0.0.0/0
+
+===========================================
+#run in cloud shell
+nano qwiklabs.yaml
+
+#CUT ALL CONTANT IN qwiklabs.jinja FILE AND PASTE BELOW CODE:
+===========================================
+imports:
+- path: qwiklabs.jinja
+
+resources:
+- name: qwiklabs
+  type: qwiklabs.jinja
+  properties:
+    zone: us-central1-a
+===========================================
+#run in cloud shell
+
+gcloud deployment-manager deployments create test --config=qwiklabs.yaml
+
+=====================THE END======================
+Thank you!!✌
